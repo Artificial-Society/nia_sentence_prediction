@@ -7,7 +7,8 @@
 - 사전학습은 "kykim/bert-kor-base" 을 사용함.    
 
 모델 구조    
- 
+<img width="1366" alt="스크린샷 2023-03-27 오후 3 02 47" src="https://user-images.githubusercontent.com/85025584/227861671-84ca3603-c33f-4d9b-9fc3-be0f658c0d39.png">
+
 
 Input     
 - 문장(raw 텍스트), 극성, 확실성, 시제 (각 0 부터 시작하는 정수로 라벨링함. ex) 과거시제 -> 0).   
