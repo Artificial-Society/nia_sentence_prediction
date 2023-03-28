@@ -52,11 +52,11 @@ model_cls = BertBaseModel()
 model_cls.cuda()
 model_cls.train()
 
-dataset = NewsDataset('train.txt', 'train_cer.txt', 'train_pol.txt', 'train_tense.txt')
+dataset = NewsDataset('data_nia/train.txt', 'data_nia/train_cer.txt', 'data_nia/train_pol.txt', 'data_nia/train_tense.txt')
 print('train set: ', dataset.__len__())
-dataset_a = NewsDataset('val.txt', 'val_cer.txt', 'val_pol.txt', 'val_tense.txt')
+dataset_a = NewsDataset('data_nia/val.txt', 'data_nia/val_cer.txt', 'data_nia/val_pol.txt', 'data_nia/val_tense.txt')
 print('val set: ', dataset_a.__len__())
-dataset_a = NewsDataset('test.txt', 'test_cer.txt', 'test_pol.txt', 'test_tense.txt')
+dataset_a = NewsDataset('data_nia/test.txt', 'data_nia/test_cer.txt', 'data_nia/test_pol.txt', 'data_nia/test_tense.txt')
 print('test set: ', dataset_a.__len__())
 
 data_loader = DataLoader(dataset, 32, shuffle=True)
@@ -105,7 +105,7 @@ for e in range(epoch):
 count = 0
 right_count = 0 
 
-dataset_test = NewsDataset('test.txt', 'test_cer.txt', 'test_pol.txt', 'test_tense.txt')
+dataset_test = NewsDataset('data_nia/test.txt', 'data_nia/test_cer.txt', 'data_nia/test_pol.txt', 'data_nia/test_tense.txt')
 data_loader_test = DataLoader(dataset_test, 1, shuffle=True)
 torch.save(model_cls, './model')
 model_cls.eval()
