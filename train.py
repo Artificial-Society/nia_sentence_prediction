@@ -36,16 +36,16 @@ class NewsDataset(Dataset):
 
     def __getitem__(self, idx):
         text = self.text[idx]
-        classtype = int(float(self.classtype[idx]))
+        label = int(self.classtype[idx])
 
-        return text, classtype
+        return text, label
 
 # device
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 # data 준비
 dataset = NewsDataset(os.path.join(data_dir, 'train.txt'))
-data_loader = DataLoader(dataset, 32, shuffle=True)
+dataloader = DataLoader(dataset, 32, shuffle=True)
 
 # 모델 정의
 model_cls = BertBaseModel()
@@ -60,15 +60,14 @@ epoch = 3
 running_loss_cls = 0.0
 
 for e in range(epoch):
-    for i, d in tqdm(enumerate(data_loader), desc='{}/{} epoch'.format(e+1, epoch), total=len(data_loader)):
-        text, classtype = d
+    for i, d in tqdm(enumerate(dataloader), desc='{}/{} epoch'.format(e+1, epoch), total=len(dataloader)):
+        text, label = d
         optimizer_cls.zero_grad()
 
-        text = list(text)
         input = tokenizer_bert(text, return_tensors="pt", padding=True)
         outputs_cls = model_cls(input["input_ids"].to(device))
 
-        loss_cls = criterion(outputs_cls, classtype.to(device))
+        loss_cls = criterion(outputs_cls, label.to(device))
 
         loss_cls.backward()
         optimizer_cls.step()
@@ -88,28 +87,26 @@ for e in range(epoch):
 #test 진행
 count = 0
 right_count = 0
-
-dataset_test = NewsDataset(os.path.join(data_dir, 'test.txt'))
-data_loader_test = DataLoader(dataset_test, 1, shuffle=True)
-torch.save(model_cls, './model')
-model_cls.eval()
-
 src_list = []
 tgt_list = []
 
-for i, d in enumerate(data_loader_test):
-    count += 1
-    text, classtype = d
+dataset_test = NewsDataset(os.path.join(data_dir, 'test.txt'))
+dataloader_test = DataLoader(dataset_test, 1, shuffle=True)
 
-    text = list(text)
+model_cls.eval()
+
+for i, d in enumerate(dataloader_test):
+    count += 1
+    text, label = d
+
     input = tokenizer_bert(text, return_tensors="pt", padding=True)
     outputs_cls = model_cls(input["input_ids"].to(device))[0].cpu()
 
-    if classtype == torch.argmax(outputs_cls):
+    if label == torch.argmax(outputs_cls):
         right_count += 1
     #print(classtype, torch.argmax(outputs_cls))
 
-    p = classtype.tolist()[0]
+    p = label.tolist()[0]
     q = torch.argmax(outputs_cls).tolist()
 
     src_list.append(p)
