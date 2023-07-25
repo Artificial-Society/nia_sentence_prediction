@@ -8,8 +8,6 @@ from torch.optim import Adam
 from transformers import BertTokenizerFast, BertModel
 from torch.utils.data import Dataset
 
-from sklearn.metrics import f1_score
-
 res = open('res.txt', 'w')
 
 #model 클래스 정의
@@ -46,7 +44,7 @@ class NewsDataset(Dataset):
         return text, classtype, certype, poltype, tensetype
 
 #학습 준비
-device = 'gpu' if torch.cuda.is_available() else 'cpu'
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 tokenizer_bert = BertTokenizerFast.from_pretrained("kykim/bert-kor-base")
 
