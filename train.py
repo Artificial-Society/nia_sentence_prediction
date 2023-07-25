@@ -30,18 +30,18 @@ class BertBaseModel(nn.Module):
 class NewsDataset(Dataset):
     def __init__(self, txt_file):
 
-        self.input_ids = []
+        self.text = []
         self.label = []
         for e in open(txt_file, 'r', encoding='utf8').readlines()[1:]: # 첫줄은 column명
-            self.input_ids.append(tokenizer_bert(e.split('\t')[0], return_tensors="pt", padding="max_length", truncation=True)['input_ids'])
-            # self.input_ids.append(e.split('\t')[0])
+            # self.text.append(tokenizer_bert(e.split('\t')[0], return_tensors="pt", padding="max_length", truncation=True)['input_ids'])
+            self.text.append(e.split('\t')[0])
             self.label.append(int(e.split('\t')[1]))
 
     def __len__(self):
-        return len(self.input_ids)
+        return len(self.text)
 
     def __getitem__(self, idx):
-        text = self.input_ids[idx]
+        text = self.text[idx]
         label = self.label[idx]
 
         return text, label
@@ -50,7 +50,7 @@ class NewsDataset(Dataset):
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 # data 준비
-dataset = NewsDataset(os.path.join(data_dir, 'test.txt'))
+dataset = NewsDataset(os.path.join(data_dir, 'train.txt'))
 dataloader = DataLoader(dataset, batch_size, shuffle=True)
 
 # 모델 정의
@@ -70,9 +70,10 @@ for e in range(epoch):
         optimizer_cls.zero_grad()
 
         batch = tuple(t.to(device) for t in batch)
-        input_ids, label = batch
+        text, label = batch
 
-        outputs = model_cls(input_ids.reshape(batch_size, 512), labels=label)
+        input_ids = tokenizer_bert(text, return_tensors="pt", padding=True, truncation=True)
+        outputs = model_cls(input_ids, labels=label)
         loss_cls = outputs[0]  # 로스 구함
 
         loss_cls.backward()
@@ -103,10 +104,11 @@ model_cls.eval()
 
 for i, d in enumerate(dataloader_test):
     count += 1
-    input_ids, label = d
+    text, label = d
 
     with torch.no_grad():
-        outputs = model_cls(input_ids.reshape(batch_size, 512))
+        input_ids = tokenizer_bert(text, return_tensors="pt", padding=True, truncation=True)
+        outputs = model_cls(input_ids)
     outputs_cls = outputs[0]
 
     if label == torch.argmax(outputs_cls):
