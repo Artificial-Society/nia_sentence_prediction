@@ -6,12 +6,13 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 from torch.optim import Adam
 
-from transformers import BertTokenizerFast, BertModel
+from transformers import BertTokenizerFast, BertModel, BertForSequenceClassification
 from torch.utils.data import Dataset
 
 from sklearn.metrics import f1_score
 
 data_dir = 'data_nia'
+batch_size = 32
 
 # tokenizer 정의
 tokenizer_bert = BertTokenizerFast.from_pretrained("kykim/bert-kor-base")
@@ -28,15 +29,20 @@ class BertBaseModel(nn.Module):
 # Dataset 클래스 정의
 class NewsDataset(Dataset):
     def __init__(self, txt_file):
-        self.text = [e.split('\t')[0] for e in open(txt_file, 'r', encoding='utf8').readlines()]
-        self.classtype = [e.split('\t')[1] for e in open(txt_file, 'r', encoding='utf8').readlines()]
+
+        self.input_ids = []
+        self.label = []
+        for e in open(txt_file, 'r', encoding='utf8').readlines()[1:]: # 첫줄은 column명
+            self.input_ids.append(tokenizer_bert(e.split('\t')[0], return_tensors="pt", padding="max_length", truncation=True)['input_ids'])
+            # self.input_ids.append(e.split('\t')[0])
+            self.label.append(int(e.split('\t')[1]))
 
     def __len__(self):
-        return len(self.text)
+        return len(self.input_ids)
 
     def __getitem__(self, idx):
-        text = self.text[idx]
-        label = int(self.classtype[idx])
+        text = self.input_ids[idx]
+        label = self.label[idx]
 
         return text, label
 
@@ -44,11 +50,11 @@ class NewsDataset(Dataset):
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 # data 준비
-dataset = NewsDataset(os.path.join(data_dir, 'train.txt'))
-dataloader = DataLoader(dataset, 32, shuffle=True)
+dataset = NewsDataset(os.path.join(data_dir, 'test.txt'))
+dataloader = DataLoader(dataset, batch_size, shuffle=True)
 
 # 모델 정의
-model_cls = BertBaseModel()
+model_cls = BertForSequenceClassification.from_pretrained("kykim/bert-kor-base") # BertBaseModel()
 model_cls.to(device)
 model_cls.train()
 
@@ -60,21 +66,21 @@ epoch = 3
 running_loss_cls = 0.0
 
 for e in range(epoch):
-    for i, d in tqdm(enumerate(dataloader), desc='{}/{} epoch'.format(e+1, epoch), total=len(dataloader)):
-        text, label = d
+    for i, batch in tqdm(enumerate(dataloader), desc='{}/{} epoch'.format(e+1, epoch), total=len(dataloader)):
         optimizer_cls.zero_grad()
 
-        input = tokenizer_bert(text, return_tensors="pt", padding=True)
-        outputs_cls = model_cls(input["input_ids"].to(device))
+        batch = tuple(t.to(device) for t in batch)
+        input_ids, label = batch
 
-        loss_cls = criterion(outputs_cls, label.to(device))
+        outputs = model_cls(input_ids.reshape(batch_size, 512), labels=label)
+        loss_cls = outputs[0]  # 로스 구함
 
         loss_cls.backward()
         optimizer_cls.step()
 
         running_loss_cls += loss_cls.item()
 
-        if i % 10 == 9:
+        if i % 100 == 0:
             print('___________________________')
             print("running_loss_cls: ", running_loss_cls)
 
@@ -97,14 +103,14 @@ model_cls.eval()
 
 for i, d in enumerate(dataloader_test):
     count += 1
-    text, label = d
+    input_ids, label = d
 
-    input = tokenizer_bert(text, return_tensors="pt", padding=True)
-    outputs_cls = model_cls(input["input_ids"].to(device))[0].cpu()
+    with torch.no_grad():
+        outputs = model_cls(input_ids.reshape(batch_size, 512))
+    outputs_cls = outputs[0]
 
     if label == torch.argmax(outputs_cls):
         right_count += 1
-    #print(classtype, torch.argmax(outputs_cls))
 
     p = label.tolist()[0]
     q = torch.argmax(outputs_cls).tolist()
