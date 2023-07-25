@@ -8,6 +8,8 @@ from torch.optim import Adam
 from transformers import BertTokenizerFast, BertModel
 from torch.utils.data import Dataset
 
+from tqdm import tqdm
+
 res = open('res.txt', 'w')
 
 #model 클래스 정의
@@ -64,12 +66,12 @@ data_loader = DataLoader(dataset, 32, shuffle=True)
 criterion = nn.CrossEntropyLoss(label_smoothing=0)
 optimizer_cls = Adam(model_cls.parameters(), lr=5e-5)
 
-epoch = 1
+epoch = 3
 running_loss_cls = 0.0
 
 #학습 진행
 for e in range(epoch):
-    for i, d in enumerate(data_loader):
+    for i, d in tqdm(enumerate(data_loader), desc='{}/{} epoch'.format(e+1, len(epoch))):
         text, classtype, certype, poltype, tensetype = d
         optimizer_cls.zero_grad()
 
