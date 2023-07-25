@@ -68,12 +68,10 @@ running_loss_cls = 0.0
 for e in range(epoch):
     for i, batch in tqdm(enumerate(dataloader), desc='{}/{} epoch'.format(e+1, epoch), total=len(dataloader)):
         optimizer_cls.zero_grad()
-
-        batch = tuple(t.to(device) for t in batch)
         text, label = batch
 
         input_ids = tokenizer_bert(text, return_tensors="pt", padding=True, truncation=True)
-        outputs = model_cls(input_ids, labels=label)
+        outputs = model_cls(input_ids['input_ids'].to(device), labels=label.to(device))
         loss_cls = outputs[0]  # 로스 구함
 
         loss_cls.backward()
@@ -108,7 +106,7 @@ for i, d in enumerate(dataloader_test):
 
     with torch.no_grad():
         input_ids = tokenizer_bert(text, return_tensors="pt", padding=True, truncation=True)
-        outputs = model_cls(input_ids)
+        outputs = model_cls(input_ids['input_ids'].to(device))
     outputs_cls = outputs[0]
 
     if label == torch.argmax(outputs_cls):
