@@ -3,7 +3,6 @@
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
-from torch.optim import Adam
 
 from transformers import BertTokenizerFast, BertModel
 from torch.utils.data import Dataset
@@ -62,6 +61,8 @@ count = 0
 right_count = 0
 
 dataset_test = NewsDataset('data_nia/test.txt', 'data_nia/test_cer.txt', 'data_nia/test_pol.txt', 'data_nia/test_tense.txt')
+print('test set: ', dataset_test.__len__())
+
 data_loader_test = DataLoader(dataset_test, 1, shuffle=True)
 torch.save(model_cls, './model')
 model_cls.eval()

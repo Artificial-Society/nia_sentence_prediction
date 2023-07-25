@@ -8,6 +8,8 @@ from torch.optim import Adam
 from transformers import BertTokenizerFast, BertModel
 from torch.utils.data import Dataset
 
+from sklearn.metrics import f1_score
+
 from tqdm import tqdm
 
 res = open('res.txt', 'w')
@@ -56,12 +58,11 @@ model_cls.train()
 
 dataset = NewsDataset('data_nia/train.txt', 'data_nia/train_cer.txt', 'data_nia/train_pol.txt', 'data_nia/train_tense.txt')
 print('train set: ', dataset.__len__())
-dataset_a = NewsDataset('data_nia/val.txt', 'data_nia/val_cer.txt', 'data_nia/val_pol.txt', 'data_nia/val_tense.txt')
-print('val set: ', dataset_a.__len__())
-dataset_a = NewsDataset('data_nia/test.txt', 'data_nia/test_cer.txt', 'data_nia/test_pol.txt', 'data_nia/test_tense.txt')
-print('test set: ', dataset_a.__len__())
+dataset_val = NewsDataset('data_nia/val.txt', 'data_nia/val_cer.txt', 'data_nia/val_pol.txt', 'data_nia/val_tense.txt')
+print('val set: ', dataset_val.__len__())
 
-data_loader = DataLoader(dataset, 32, shuffle=True)
+dataloader = DataLoader(dataset, 32, shuffle=True)
+dataloader_val = DataLoader(dataset_val, 1, shuffle=True)
 
 criterion = nn.CrossEntropyLoss(label_smoothing=0)
 optimizer_cls = Adam(model_cls.parameters(), lr=5e-5)
@@ -71,8 +72,9 @@ running_loss_cls = 0.0
 
 #학습 진행
 for e in range(epoch):
-    for i, d in tqdm(enumerate(data_loader), desc='{}/{} epoch'.format(e+1, epoch), total=len(data_loader)):
-        text, classtype, certype, poltype, tensetype = d
+    # train
+    for idx, d_train in tqdm(enumerate(dataloader), desc='{}/{} epoch'.format(e+1, epoch), total=len(dataloader)):
+        text, classtype, certype, poltype, tensetype = d_train
         optimizer_cls.zero_grad()
 
         certype = certype.unsqueeze(1)
@@ -92,10 +94,51 @@ for e in range(epoch):
 
         running_loss_cls += loss_cls.item()
 
-        if i % 10 == 9:
+        if idx % 10 == 9:
             print('___________________________')
             print("running_loss_cls: ", running_loss_cls)
 
             running_loss_cls = 0.0
 
-torch.save(model_cls.state_dict(), "./model_state_dict.pt")
+        break ## todo: test
+    # validation
+    count = 0
+    right_count = 0
+    src_list = []
+    tgt_list = []
+
+    for _, d_val in tqdm(enumerate(dataloader_val), desc='validation', total=len(dataloader_val)):
+
+        ## todo: test
+        if _ < 8000:
+            continue
+
+        count += 1
+        text, classtype, certype, poltype, tensetype = d_val
+
+        text = list(text)
+        certype = certype.unsqueeze(1)
+        poltype = poltype.unsqueeze(1)
+        tensetype = tensetype.unsqueeze(1)
+
+        inp_plus = torch.cat((certype, poltype, tensetype), -1).to(device)
+        input = tokenizer_bert(text, return_tensors="pt", padding=True)
+        outputs_cls = model_cls(input["input_ids"].to(device), inp_plus)[0].cpu()
+
+        if classtype == torch.argmax(outputs_cls):
+            right_count += 1
+
+        p = classtype.tolist()[0]
+        q = torch.argmax(outputs_cls).tolist()
+
+        res.write('정답: ' + str(p) + ', 결과: ' + str(q) + '\n')
+
+        src_list.append(p)
+        tgt_list.append(q)
+
+    print(right_count / count)
+    f_score = f1_score(src_list, tgt_list, average='macro')
+    print(f_score)
+
+    # save
+    torch.save(model_cls.state_dict(), "./model_state_dict.pt")
