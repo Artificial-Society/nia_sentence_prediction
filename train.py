@@ -71,7 +71,7 @@ running_loss_cls = 0.0
 
 #학습 진행
 for e in range(epoch):
-    for i, d in tqdm(enumerate(data_loader), desc='{}/{} epoch'.format(e+1, len(epoch))):
+    for i, d in tqdm(enumerate(data_loader), desc='{}/{} epoch'.format(e+1, epoch)):
         text, classtype, certype, poltype, tensetype = d
         optimizer_cls.zero_grad()
 
