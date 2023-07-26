@@ -1,3 +1,6 @@
 .idea/
-data_nia/
+__pycache__/
+
+data/data.tsv
 model/
+log/
