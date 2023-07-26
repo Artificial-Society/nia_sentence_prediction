@@ -28,10 +28,10 @@ from tqdm import tqdm
 #         dataset.append({'text': text, 'label': label, 'cer': cer, 'pol': pol, 'tense': tense})
 #
 # df = pd.DataFrame(dataset)
-# df.to_csv('data.txt', sep='\t',)
+# df.to_csv('data.tsv', sep='\t',)
 
 #########
-# df = pd.read_csv('data_nia/data.txt', delimiter='\t')
+# df = pd.read_csv('data_nia/data.tsv', delimiter='\t')
 # length = int(0.9*len(df))
 #
 # shuffled_df = df.sample(frac=1, random_state=42)
