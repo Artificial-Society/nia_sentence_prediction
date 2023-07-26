@@ -1,6 +1,6 @@
 # nia_sentence_prediction
 Demo    
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)]([https://github.com/Artificial-Society/nia_sentence_prediction/blob/main/sentence_type_prediction.ipynb](https://colab.research.google.com/github/Artificial-Society/nia_sentence_prediction/blob/main/sentence_type_prediction.ipynb)
+ [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Artificial-Society/nia_sentence_prediction/blob/main/sentence_type_prediction.ipynb) 
 
 모델 개관.  
 - BERT 언어모델을 활용한 문장유형 분류 모델    
