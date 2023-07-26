@@ -13,18 +13,12 @@ from sklearn.metrics import f1_score
 
 data_dir = 'data_nia'
 batch_size = 32
+epoch = 3
+lr = 5e-5
 
-# tokenizer 정의
+# tokenizer / model 정의
 tokenizer_bert = BertTokenizerFast.from_pretrained("kykim/bert-kor-base")
-
-#model 클래스 정의
-class BertBaseModel(nn.Module):
-    def __init__(self):
-        super(BertBaseModel, self).__init__()
-        self.bert = BertModel.from_pretrained("kykim/bert-kor-base")
-        self.cls = nn.Linear(768, 4)
-    def forward(self, data):
-        return self.cls(self.bert(data)[1])
+model_cls = BertForSequenceClassification.from_pretrained("kykim/bert-kor-base", num_labels=4)
 
 # Dataset 클래스 정의
 class NewsDataset(Dataset):
@@ -50,19 +44,18 @@ class NewsDataset(Dataset):
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 # data 준비
-dataset = NewsDataset(os.path.join(data_dir, 'train.txt'))
+dataset = NewsDataset(os.path.join(data_dir, 'test.txt'))  ## todo: test
 dataloader = DataLoader(dataset, batch_size, shuffle=True)
 
-# 모델 정의
-model_cls = BertForSequenceClassification.from_pretrained("kykim/bert-kor-base") # BertBaseModel()
+
+
+#학습 진행
 model_cls.to(device)
 model_cls.train()
 
 criterion = nn.CrossEntropyLoss(label_smoothing=0)
-optimizer_cls = Adam(model_cls.parameters(), lr=5e-5)
+optimizer_cls = Adam(model_cls.parameters(), lr=lr)
 
-#학습 진행
-epoch = 3
 running_loss_cls = 0.0
 
 for e in range(epoch):
