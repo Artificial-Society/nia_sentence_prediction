@@ -21,6 +21,19 @@ from transformers import AdamW, get_linear_schedule_with_warmup
 from sklearn.metrics import classification_report
 from sklearn.model_selection import train_test_split
 
+idx2type = {'label': '문장유형', 'cer': '확실성', 'pol': '극성'}
+
+label2idx = {'사실형': 0, '추론형': 1, '대화형': 2, '예측형': 3}
+idx2label = {v: k for k, v in label2idx.items()}
+
+cer2idx = {'불확실': 0, '확실': 1}
+idx2cer = {v: k for k, v in cer2idx.items()}
+
+pol2idx = {'미정': 0, '부정': 1, '긍정': 2}
+idx2pol = {v: k for k, v in pol2idx.items()}
+
+
+
 def flat_accuracy(preds, labels):
     pred_flat = np.argmax(preds, axis=1).flatten()
     labels_flat = labels.flatten()
@@ -88,7 +101,20 @@ class Classification:
 
         self. num_labels = len(list(set(self.labels)))
         print('{} labels, {} dataset'.format(self.num_labels, len(self.labels)))
-        print('label counts:: {}'.format(Counter(self.labels)))
+        # print('label counts:: {}'.format(Counter(self.labels)))
+
+        print('분류 타입: {}'.format(idx2type[col_label]))
+        print('데이터 확인:')
+        if col_label == 'label':
+            for num, idx in enumerate(data.groupby('label').size()):
+                print('{}: {}'.format(idx2label[num], idx))
+        elif col_label == 'cer':
+            for num, idx in enumerate(data.groupby('cer').size()):
+                print('{}: {}'.format(idx2cer[num], idx))
+        elif col_label == 'pol':
+            for num, idx in enumerate(data.groupby('pol').size()):
+                print('{}: {}'.format(idx2pol[num], idx))
+        exit()
 
     def load_model(self, mode=None, saved_model_path=None):
         self.tokenizer = self.tokenizer_class.from_pretrained(self.model_name)
