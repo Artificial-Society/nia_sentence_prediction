@@ -114,7 +114,6 @@ class Classification:
         elif col_label == 'pol':
             for num, idx in enumerate(data.groupby('pol').size()):
                 print('{}: {}'.format(idx2pol[num], idx))
-        exit()
 
     def load_model(self, mode=None, saved_model_path=None):
         self.tokenizer = self.tokenizer_class.from_pretrained(self.model_name)
