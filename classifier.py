@@ -94,7 +94,7 @@ class Classification:
             print('not supported data file')
 
         self.sentences, self.labels = [], []
-        for idx in data.index[:100]: ### todo: test
+        for idx in data.index:
             sentence = data.loc[idx, col_sentence]
             label = data.loc[idx, col_label]
 
