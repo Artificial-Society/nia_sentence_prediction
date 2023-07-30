@@ -21,6 +21,11 @@ from transformers import AdamW, get_linear_schedule_with_warmup
 from sklearn.metrics import classification_report
 from sklearn.model_selection import train_test_split
 
+from ml_things import plot_confusion_matrix
+
+from transformers import logging
+logging.set_verbosity_error()
+
 idx2type = {'label': '문장유형', 'cer': '확실성', 'pol': '극성'}
 
 label2idx = {'사실형': 0, '추론형': 1, '대화형': 2, '예측형': 3}
@@ -77,6 +82,8 @@ class Classification:
             self.tokenizer_class = BertTokenizerFast
 
     def dataset(self, data_path, col_sentence='text', col_label='label'):
+        self.col_label = col_label
+
         if data_path.endswith('.xlsx'):
             data = pd.read_excel(data_path)
         elif data_path.endswith('.csv'):
@@ -87,7 +94,7 @@ class Classification:
             print('not supported data file')
 
         self.sentences, self.labels = [], []
-        for idx in data.index:
+        for idx in data.index[:100]: ### todo: test
             sentence = data.loc[idx, col_sentence]
             label = data.loc[idx, col_label]
 
@@ -100,20 +107,22 @@ class Classification:
                 print('label error:', sentence, label)
 
         self. num_labels = len(list(set(self.labels)))
-        print('{} labels, {} dataset'.format(self.num_labels, len(self.labels)))
+        print('총 데이터 수(train+validation): {}'.format(len(self.labels)))
+
+        # print('{} labels, {} dataset'.format(self.num_labels, len(self.labels)))
         # print('label counts:: {}'.format(Counter(self.labels)))
 
-        print('분류 타입: {}'.format(idx2type[col_label]))
-        print('데이터 확인:')
-        if col_label == 'label':
-            for num, idx in enumerate(data.groupby('label').size()):
-                print('{}: {}'.format(idx2label[num], idx))
-        elif col_label == 'cer':
-            for num, idx in enumerate(data.groupby('cer').size()):
-                print('{}: {}'.format(idx2cer[num], idx))
-        elif col_label == 'pol':
-            for num, idx in enumerate(data.groupby('pol').size()):
-                print('{}: {}'.format(idx2pol[num], idx))
+        # print('분류 타입: {}'.format(idx2type[col_label]))
+        # print('데이터 확인:')
+        # if col_label == 'label':
+        #     for num, idx in enumerate(data.groupby('label').size()):
+        #         print('{}: {}'.format(idx2label[num], idx))
+        # elif col_label == 'cer':
+        #     for num, idx in enumerate(data.groupby('cer').size()):
+        #         print('{}: {}'.format(idx2cer[num], idx))
+        # elif col_label == 'pol':
+        #     for num, idx in enumerate(data.groupby('pol').size()):
+        #         print('{}: {}'.format(idx2pol[num], idx))
 
     def load_model(self, mode=None, saved_model_path=None):
         self.tokenizer = self.tokenizer_class.from_pretrained(self.model_name)
@@ -146,6 +155,26 @@ class Classification:
 
             train_masks, validation_masks, _, _ = train_test_split(attention_masks, input_ids, random_state=2021,
                                                                    test_size=dataset_split)
+
+            if self.col_label == 'label':
+                fcn = idx2label
+            elif self.col_label == 'cer':
+                fcn = idx2cer
+            elif self.col_label == 'pol':
+                fcn = idx2pol
+
+            print('-------------------------------')
+            print('train data 수: {}'.format(len(train_labels)))
+            print('train data 라벨별 수')
+            for ele in list(set(train_labels)):
+                print(fcn[ele], train_labels.count(ele))
+            print('-------------------------------')
+
+            print('validation data 수: {}'.format(len(validation_labels)))
+            print('validation data 라벨별 수')
+            for ele in list(set(validation_labels)):
+                print(fcn[ele], validation_labels.count(ele))
+            print('-------------------------------')
 
             # 데이터를 파이토치의 텐서로 변환
             train_inputs = torch.tensor(train_inputs)
@@ -209,7 +238,7 @@ class Classification:
         writer = SummaryWriter(log_dir)
 
         model = self.model
-        optimizer = AdamW(model.parameters(), lr=3e-5, eps=1e-8)
+        optimizer = AdamW(model.parameters(), lr=3e-5, eps=1e-8, no_deprecation_warning=True)
 
         # 총 훈련 스텝 : 배치반복 횟수 * 에폭
         total_steps = len(self.train_dataloader) * epochs
@@ -321,6 +350,10 @@ class Classification:
             labels_accuracy = [y for x in labels_accuracy for y in x]  # list flatten
             preds_accuracy = [y for x in preds_accuracy for y in x]
             print(classification_report(labels_accuracy, preds_accuracy))
+
+            plot_confusion_matrix(y_true=labels_accuracy, y_pred=preds_accuracy, path='plot_confusion_matrix_{}_{}.png'.format(self.col_label, epoch_i), show_plot=False)
+            print('confusion matrix is saved: {}'.format('plot_confusion_matrix_{}_{}.png'.format(self.col_label, epoch_i)))
+
 
             writer.add_scalar('Avg_loss(training)', avg_train_loss, epoch_i + 1)
             writer.add_scalars('Accuracy', {'Train': train_accuracy / nb_train_steps,
