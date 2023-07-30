@@ -26,18 +26,11 @@ from ml_things import plot_confusion_matrix
 from transformers import logging
 logging.set_verbosity_error()
 
-idx2type = {'label': '문장유형', 'cer': '확실성', 'pol': '극성'}
+from constants import label2idx, cer2idx, pol2idx
 
-label2idx = {'사실형': 0, '추론형': 1, '대화형': 2, '예측형': 3}
 idx2label = {v: k for k, v in label2idx.items()}
-
-cer2idx = {'불확실': 0, '확실': 1}
 idx2cer = {v: k for k, v in cer2idx.items()}
-
-pol2idx = {'미정': 0, '부정': 1, '긍정': 2}
 idx2pol = {v: k for k, v in pol2idx.items()}
-
-
 
 def flat_accuracy(preds, labels):
     pred_flat = np.argmax(preds, axis=1).flatten()

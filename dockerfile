@@ -11,5 +11,5 @@ RUN pip install torch transformers scikit-learn tensorboard ml-things pandas
 COPY . /app
 
 # 기본 명령 실행
-CMD ["python", "main.py"]
+CMD ["python", "inference.py"]
 
